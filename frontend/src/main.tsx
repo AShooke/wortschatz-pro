@@ -1,5 +1,6 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
 
 import { api } from './api/client';
 import { MobileShell, type ShellTab } from './components/layout';
@@ -93,6 +94,9 @@ function App() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <>
+      <App />
+      <Analytics />
+    </>
   </StrictMode>,
 );

@@ -10,21 +10,22 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "clsx": "latest",
+    "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "lucide-react": "latest",
-    "clsx": "latest",
     "tailwind-merge": "latest"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "vite": "latest",
-    "typescript": "latest",
-    "tailwindcss": "^3.4.17",
-    "postcss": "latest",
+    "@vitejs/plugin-react": "latest",
     "autoprefixer": "latest",
+    "postcss": "latest",
+    "tailwindcss": "^3.4.17",
+    "typescript": "latest",
+    "vite": "latest",
     "vite-plugin-pwa": "latest",
     "vitest": "latest"
   }
