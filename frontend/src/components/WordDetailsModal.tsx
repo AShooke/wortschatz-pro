@@ -44,6 +44,7 @@ export function WordDetailsModal({ word, onClose }: WordDetailsModalProps) {
             <div className="mt-2 flex flex-wrap items-baseline gap-2">
               {word.article && <ArticleBadge article={word.article} className="px-2.5 py-1 text-sm" />}
               <h2 id="word-details-heading" className="break-words text-2xl font-semibold leading-8 text-white">{german}</h2>
+              {word.grammarInfo && <span className="rounded-full border border-slate-600/70 bg-slate-800/70 px-2.5 py-1 text-xs font-medium text-slate-300">{word.grammarInfo}</span>}
             </div>
             <p className="mt-2 text-base leading-6 text-slate-300">{word.russian}</p>
           </div>

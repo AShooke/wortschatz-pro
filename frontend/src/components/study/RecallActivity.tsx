@@ -102,6 +102,7 @@ export function RecallActivity({ word, onRate, disabled = false }: RecallActivit
           <div className="flex min-h-[20rem] flex-col justify-center">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300">Перевод</p>
             <h2 className="mt-4 break-words text-2xl font-semibold text-white">{word.russian}</h2>
+            {word.grammarInfo && <p className="mt-2 w-fit rounded-full border border-slate-600/70 bg-slate-900/70 px-3 py-1 text-xs font-medium text-slate-400">{word.grammarInfo}</p>}
             {word.plural && <p className="mt-5 text-sm text-slate-300">Множественное число: <span className="font-semibold text-white">{word.plural}</span></p>}
             {word.example && <p className="mt-5 border-t border-slate-700 pt-4 text-sm leading-6 text-slate-300">{word.example}</p>}
           </div>

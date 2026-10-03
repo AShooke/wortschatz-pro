@@ -6,7 +6,9 @@ import {
   readReviewSummary,
   readWordRecords,
   recordReview as recordStoredReview,
+  migrateWordGrammar,
   writeWordRecords,
+  type WordGrammarRecord,
 } from './storage';
 import { createInitialSrsState, normalizeSrsState, scheduleReview, type ReviewRating, type SrsState } from '../lib/scheduling';
 
@@ -15,6 +17,7 @@ export type PartOfSpeech = 'noun' | 'verb' | 'adjective' | 'adverb' | 'pronoun' 
 export interface Word {
   id: number;
   german: string;
+  grammarInfo?: string;
   russian: string;
   article: 'der' | 'die' | 'das' | null;
   category: string | null;
@@ -33,6 +36,7 @@ export interface Word {
 
 export interface WordCreate {
   german: string;
+  grammarInfo?: string;
   russian: string;
   article?: 'der' | 'die' | 'das' | null;
   category?: string | null;
@@ -88,7 +92,7 @@ function readWords(): Word[] {
 
 function normalizeStoredWord(value: unknown): Word | null {
   if (typeof value !== 'object' || value === null) return null;
-  const candidate = value as Partial<Word>;
+  const candidate = migrateWordGrammar(value as WordGrammarRecord) as Partial<Word>;
   if (!Number.isInteger(candidate.id) || typeof candidate.german !== 'string' || typeof candidate.russian !== 'string') return null;
   const stage = typeof candidate.stage === 'number' && Number.isFinite(candidate.stage) ? Math.min(Math.max(Math.floor(candidate.stage), 0), 5) : 0;
   const intervalHours = typeof candidate.interval_hours === 'number' && Number.isFinite(candidate.interval_hours) && candidate.interval_hours > 0 ? candidate.interval_hours : 4;
@@ -100,6 +104,7 @@ function normalizeStoredWord(value: unknown): Word | null {
     ...candidate,
     id: candidate.id as number,
     german: candidate.german,
+    grammarInfo: typeof candidate.grammarInfo === 'string' ? candidate.grammarInfo : undefined,
     russian: candidate.russian,
     article: candidate.article === 'der' || candidate.article === 'die' || candidate.article === 'das' ? candidate.article : null,
     category: typeof candidate.category === 'string' ? candidate.category : null,
@@ -128,6 +133,10 @@ function mergeSeedWords(words: Word[]): Word[] {
     if (existing && seededGerman.has(key)) {
       existing.tags = [...new Set([...(existing.tags ?? []), ...(word.tags ?? [])])];
       if (!existing.tabooExplanations?.length && word.tabooExplanations?.length) existing.tabooExplanations = word.tabooExplanations;
+      if (!existing.grammarInfo && word.grammarInfo) {
+        existing.grammarInfo = word.grammarInfo;
+        changed = true;
+      }
       changed = true;
       continue;
     }
@@ -138,6 +147,10 @@ function mergeSeedWords(words: Word[]): Word[] {
   for (const seed of seeds) {
     const existing = existingByGerman.get(normalizeGerman(seed.german));
     if (existing) {
+      if (!existing.grammarInfo && seed.grammarInfo) {
+        existing.grammarInfo = seed.grammarInfo;
+        changed = true;
+      }
       if (!existing.tabooExplanations?.length && seed.tabooExplanations?.length) {
         existing.tabooExplanations = seed.tabooExplanations;
         changed = true;
@@ -215,7 +228,26 @@ export class WortSchatzApi {
 
   async createWord(payload: WordCreate): Promise<Word> {
     const words = readWords();
-    const word: Word = { id: words.reduce((max, item) => Math.max(max, item.id), 0) + 1, german: payload.german, russian: payload.russian, article: payload.article ?? null, category: payload.category ?? 'Мои слова', tags: payload.tags, part_of_speech: payload.part_of_speech, plural: payload.plural ?? null, example: payload.example ?? null, examples: payload.examples, tabooExplanations: payload.tabooExplanations, stage: 0, interval_hours: 4, mistakes: 0, next_review_at: null, srs: createInitialSrsState({ stage: 0, intervalHours: 4, mistakes: 0, nextReviewAt: null }) };
+    const cleanPayload = migrateWordGrammar(payload);
+    const word: Word = {
+      id: words.reduce((max, item) => Math.max(max, item.id), 0) + 1,
+      german: cleanPayload.german,
+      grammarInfo: cleanPayload.grammarInfo,
+      russian: cleanPayload.russian,
+      article: cleanPayload.article ?? null,
+      category: cleanPayload.category ?? 'Мои слова',
+      tags: cleanPayload.tags,
+      part_of_speech: cleanPayload.part_of_speech,
+      plural: cleanPayload.plural ?? null,
+      example: cleanPayload.example ?? null,
+      examples: cleanPayload.examples,
+      tabooExplanations: cleanPayload.tabooExplanations,
+      stage: 0,
+      interval_hours: 4,
+      mistakes: 0,
+      next_review_at: null,
+      srs: createInitialSrsState({ stage: 0, intervalHours: 4, mistakes: 0, nextReviewAt: null }),
+    };
     writeWords([word, ...words]);
     notifyLearnerDataChanged();
     return word;
@@ -225,7 +257,14 @@ export class WortSchatzApi {
     const words = readWords();
     const index = words.findIndex((word) => word.id === wordId);
     if (index < 0) throw new Error('Слово не найдено');
-    const word = { ...words[index], ...payload, article: payload.article ?? null, category: payload.category ?? null, plural: payload.plural ?? null, example: payload.example ?? null };
+    const word = migrateWordGrammar({
+      ...words[index],
+      ...payload,
+      article: payload.article ?? null,
+      category: payload.category ?? null,
+      plural: payload.plural ?? null,
+      example: payload.example ?? null,
+    }) as Word;
     words[index] = word;
     writeWords(words);
     notifyLearnerDataChanged();

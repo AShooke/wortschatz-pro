@@ -3,10 +3,49 @@ export interface ReviewSummary {
   count: number;
 }
 
+export interface WordGrammarRecord {
+  german?: unknown;
+  grammarInfo?: unknown;
+}
+
 export const WORDS_STORAGE_KEY = 'wortschatz.words.v3';
 export const LEGACY_WORDS_STORAGE_KEY = 'wortschatz.words.v2';
 export const REVIEWS_STORAGE_KEY = 'wortschatz.reviews.v3';
 export const LEGACY_REVIEWS_STORAGE_KEY = 'wortschatz.reviews.v2';
+
+export function migrateWordGrammar<T extends WordGrammarRecord>(record: T): T {
+  if (typeof record.german !== 'string') return record;
+
+  let german = record.german.trim();
+  const markers: string[] = [];
+  const existingGrammarInfo = typeof record.grammarInfo === 'string' ? record.grammarInfo.trim() : '';
+  if (existingGrammarInfo) markers.push(existingGrammarInfo);
+
+  if (/^sich\s+/i.test(german)) {
+    german = german.replace(/^sich\s+/i, '');
+    markers.push('sich');
+  }
+
+  const reflexiveSuffix = german.match(/\s+\(sich\)$/i);
+  if (reflexiveSuffix?.index !== undefined) {
+    german = german.slice(0, reflexiveSuffix.index).trim();
+    markers.push('sich');
+  }
+
+  const caseSuffix = german.match(/(?:\s+[\p{L}]+\s+)?\(?\s*\+\s*(?:Dat|Akk|Gen)\.?\s*\)?$/iu);
+  if (caseSuffix?.index !== undefined) {
+    const marker = caseSuffix[0].trim().replace(/[()]/g, '').replace(/\s+/g, ' ');
+    german = german.slice(0, caseSuffix.index).trim();
+    markers.push(marker.replace(/\b(Dat|Akk|Gen)$/i, '$1.'));
+  }
+
+  const uniqueMarkers = [...new Map(markers.map((marker) => [marker.toLocaleLowerCase(), marker])).values()];
+  return {
+    ...record,
+    german,
+    ...(uniqueMarkers.length ? { grammarInfo: uniqueMarkers.join('; ') } : {}),
+  };
+}
 
 type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
 

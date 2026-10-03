@@ -99,6 +99,7 @@ function WordRow({ word, onSelect }: { word: Word; onSelect: (word: Word) => voi
         <div className="flex flex-wrap items-center gap-2">
           {word.article && <ArticleBadge article={word.article} className="px-2 py-0.5 text-[10px]" />}
           <h2 className="truncate font-semibold text-white">{word.german}</h2>
+          {word.grammarInfo && <span className="rounded-full bg-slate-700/70 px-2 py-0.5 text-[10px] font-medium text-slate-300">{word.grammarInfo}</span>}
         </div>
         <p className="mt-1 truncate text-sm text-slate-400">{word.russian}</p>
       </button>

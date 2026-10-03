@@ -50,6 +50,49 @@ describe('word storage migration', () => {
     expect(storage.getItem(LEGACY_WORDS_STORAGE_KEY)).toBe(JSON.stringify([legacyWord]));
   });
 
+  it('extracts grammar hints from saved words without changing IDs or review progress', async () => {
+    const storage = makeStorage();
+    const savedSrs = {
+      algorithmVersion: 1,
+      repetitions: 4,
+      difficulty: 6.25,
+      stabilityDays: 11,
+      lastReviewedAt: '2026-09-20T12:00:00.000Z',
+      dueAt: '2026-10-04T12:00:00.000Z',
+      lapses: 3,
+    };
+    storage.setItem(LEGACY_WORDS_STORAGE_KEY, JSON.stringify([{
+      id: 9100,
+      german: 'sich kümmern um (+ Akk.)',
+      russian: 'заботиться о',
+      article: null,
+      category: 'Мои слова',
+      part_of_speech: 'verb',
+      plural: null,
+      example: null,
+      stage: 4,
+      interval_hours: 264,
+      mistakes: 3,
+      next_review_at: savedSrs.dueAt,
+      srs: savedSrs,
+    }]));
+    vi.stubGlobal('window', { localStorage: storage });
+
+    const words = await new WortSchatzApi().getWords();
+    const migrated = words.find((word) => word.id === 9100);
+
+    expect(migrated).toMatchObject({
+      id: 9100,
+      german: 'kümmern',
+      grammarInfo: 'sich; um + Akk.',
+      stage: 4,
+      interval_hours: 264,
+      mistakes: 3,
+      next_review_at: savedSrs.dueAt,
+      srs: savedSrs,
+    });
+  });
+
   it('accepts both new ratings and the existing numeric review contract', async () => {
     const storage = makeStorage();
     vi.stubGlobal('window', { localStorage: storage });
