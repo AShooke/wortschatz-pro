@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
+  color: #f5f7f6;
+  background: #090e10;
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --color-ink: #090e10;
+  --color-surface: #11181b;
+  --color-elevated: #192226;
+  --color-line: #29363a;
+  --color-accent: #c2f970;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100svh;
+  background: linear-gradient(145deg, #111a1d, #090e10 60%, #0d1416);
+}
+
+button {
+  font: inherit;
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+@keyframes taboo-reveal {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.taboo-reveal {
+  animation: taboo-reveal 220ms ease-out;
+}
